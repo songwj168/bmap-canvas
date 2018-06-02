@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+	body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+	</style>
+	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=ZN0QijklYyTdNjZfnGQDspsHqxGniWy4"></script>
+	<title>百度地图全球连续显示样例</title>
+</head>
+<body>
+	<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+	var map = new BMap.Map("allmap");
+	map.centerAndZoom(new BMap.Point(116.404, 39.915), 3);
+	map.setCurrentCity("北京"); 
+	map.enableScrollWheelZoom(true);
+  
+	var canvas, ctx = null;
+			
+	function ShipOverlay(point){
+		this._point = point;
+	}
+	ShipOverlay.prototype = new BMap.Overlay();
+	ShipOverlay.prototype.initialize = function(map){
+		this._map = map;
+		canvas = this.canvas = document.createElement("canvas");
+		canvas.style.position = "absolute";
+		canvas.style.top = 0;
+		canvas.style.left = 0;
+		ctx = canvas.getContext("2d");
+		var size = map.getSize();
+		canvas.width = size.width;
+		canvas.height = size.height;
+		map.getPanes().mapPane.appendChild(canvas);
+		return this.canvas;
+	}
+			
+	ShipOverlay.prototype.draw = function(){
+		var map = this._map;
+		var size = map.getSize();
+		var canvasW = size.width;
+		var canvasH = size.height;
+		ctx.clearRect(0, 0, canvasW, canvasH);
+		// 让画布的原点(0,0)始终位于地图可视范围的左上角
+		var bmap_mask = document.getElementsByClassName("BMap_mask")[0];
+		var left = bmap_mask.style.left;
+		var top = bmap_mask.style.top;
+		this.canvas.width = canvasW;
+		this.canvas.height = canvasH;
+		this.canvas.style.left = left;
+		this.canvas.style.top = top;
+
+		var earthLeftPxl = map.pointToPixel(new BMap.Point(-180, 0));
+		var earthLeftPxl_x = earthLeftPxl.x;
+		var earthCenterPxl = map.pointToPixel(new BMap.Point(0, 0));
+		var earthCenterX = earthCenterPxl.x;
+		var earthCenterY = earthCenterPxl.y;
+		var earthRightPxl = map.pointToPixel(new BMap.Point(180, 0));
+		var earthRightPxl_x = earthRightPxl.x;
+		// 计算全球宽度（像素），每放大一个级别，宽度扩大两倍
+		var earthW = (earthRightPxl.x - earthCenterX) << 1;
+
+		var pxl = map.pointToPixel(this._point);
+		ctx.fillStyle = "#00FF00";
+		ctx.beginPath();
+		ctx.arc(pxl.x, pxl.y, 20, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
+
+		ctx.fillStyle = "#00FF00";
+		ctx.beginPath();
+		ctx.arc(pxl.x - earthW, pxl.y, 20, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
+	}
+
+	var myCompOverlay = new ShipOverlay(new BMap.Point(116,39));
+	map.addOverlay(myCompOverlay);
+</script>
